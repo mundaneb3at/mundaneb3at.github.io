@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Bardia Shah Abadi — Portfolio</title>
+  <meta name="description" content="Portfolio of Bardia Shah Abadi, an electrical engineering student building public kits for verification, terminals, and study." />
+  <meta name="theme-color" content="#12110f" />
+  <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400;1,6..72,500&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --font-sans: "Outfit", "Avenir Next", "Segoe UI", sans-serif;
+      --font-display: "Newsreader", "Iowan Old Style", Georgia, serif;
+      --bg: #12110f;
+      --elevated: #1c1b18;
+      --subtle-bg: #26241f;
+      --fg: #f3efe6;
+      --muted: #a8a297;
+      --subtle: #8a847b;
+      --line: #3a3832;
+      --accent: #e4ddd0;
+      --danger: #f0b4a8;
+      --shadow: 0 0 0 1px rgb(243 239 230 / 0.1);
+      --shadow-hover: 0 0 0 1px rgb(243 239 230 / 0.2);
+      --display: clamp(2.85rem, 1.1rem + 6.4vw, 6.15rem);
+      --quote: clamp(1.7rem, 1.15rem + 1.5vw, 2.55rem);
+      --ease: cubic-bezier(0.22, 1, 0.36, 1);
+    }
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; color-scheme: dark; -webkit-font-smoothing: antialiased; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--fg);
+      font-family: var(--font-sans);
+      font-size: 1.0625rem;
+      line-height: 1.55;
+      text-wrap: pretty;
+    }
+    h1, h2, h3 { text-wrap: balance; margin: 0; }
+    p { margin: 0; }
+    a { color: inherit; }
+    button, [role="button"] { cursor: pointer; font: inherit; }
+    button:disabled { cursor: default; }
+    ::selection { background: var(--fg); color: var(--bg); }
+    :focus-visible { outline: 2px solid var(--fg); outline-offset: 3px; }
+    .sr { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+    .wrap { width: min(72rem, calc(100% - 2.5rem)); margin-inline: auto; }
+    .kicker { font-size: 0.75rem; font-weight: 500; letter-spacing: 0.16em; text-transform: uppercase; color: var(--subtle); }
+    .display { font-family: var(--font-display); font-size: var(--display); line-height: 0.92; letter-spacing: -0.035em; font-weight: 500; }
+    .serif { font-family: var(--font-display); }
+    .muted { color: var(--muted); }
+    .subtle { color: var(--subtle); }
+    .press { transition: scale 150ms ease-out, background-color 150ms ease-out, color 150ms ease-out; }
+    .press:active:not(:disabled) { scale: 0.96; }
+    .btn {
+      display: inline-flex; min-height: 2.75rem; align-items: center; justify-content: center;
+      border-radius: 999px; padding: 0 1.25rem; font-size: 0.875rem; font-weight: 500;
+      text-decoration: none; border: 0; background: var(--fg); color: var(--bg);
+    }
+    .btn:hover { background: var(--accent); }
+    .btn.ghost { background: transparent; color: var(--fg); border: 1px solid var(--line); }
+    .btn.ghost:hover { background: var(--subtle-bg); }
+    header.mast {
+      position: sticky; top: 0; z-index: 30;
+      padding-top: env(safe-area-inset-top);
+      border-bottom: 1px solid var(--line);
+      background: var(--bg);
+    }
+    .bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.25rem 1.25rem; }
+    .name { display: inline-flex; min-height: 2.75rem; align-items: center; font-weight: 500; letter-spacing: -0.02em; text-decoration: none; }
+    nav.page { display: flex; flex-wrap: wrap; }
+    nav.page a, .toc a, footer a.hit {
+      display: inline-flex; min-height: 2.75rem; align-items: center;
+      padding: 0 0.6rem; font-size: 0.875rem; color: var(--muted); text-decoration: none;
+    }
+    nav.page a[aria-current="true"], nav.page a:hover, .toc a:hover, footer a.hit:hover { color: var(--fg); }
+    .toc a:hover, footer a.hit:hover { color: var(--accent); }
+    .hero { display: grid; gap: 3rem; padding: 3.5rem 0 4rem; }
+    .hero p.lede { margin-top: 1.5rem; max-width: 36rem; font-size: 1.125rem; color: var(--muted); }
+    .actions { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 2rem; }
+    .toc { list-style: none; margin: 1rem 0 0; padding: 0; border-top: 1px solid var(--line); }
+    .toc li { border-bottom: 1px solid var(--line); }
+    .toc a { width: 100%; justify-content: space-between; padding-inline: 0; color: var(--fg); }
+    .num { margin-right: 0.75rem; font-variant-numeric: tabular-nums; color: var(--subtle); }
+    .meta { margin-top: 1.5rem; font-size: 0.875rem; color: var(--muted); }
+    .section { scroll-margin-top: 5.5rem; border-top: 1px solid var(--line); padding: 4rem 0; }
+    .headrow { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 1.5rem; }
+    .title { margin-top: 0.75rem; font-family: var(--font-display); font-size: clamp(2.25rem, 1.4rem + 2vw, 3rem); line-height: 1; letter-spacing: -0.03em; font-weight: 500; }
+    .chips { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 2rem; border: 0; padding: 0; }
+    .chip {
+      display: inline-flex; min-height: 2.75rem; align-items: center; gap: 0.5rem;
+      border-radius: 999px; padding: 0 1rem; font-size: 0.875rem;
+      background: transparent; color: var(--muted); border: 1px solid var(--line);
+    }
+    .chip[aria-pressed="true"] { background: var(--fg); color: var(--bg); border-color: var(--fg); }
+    .chip .count { font-variant-numeric: tabular-nums; color: var(--subtle); }
+    .chip[aria-pressed="true"] .count { color: rgb(18 17 15 / 0.7); }
+    .grid { list-style: none; margin: 2rem 0 0; padding: 0; display: grid; gap: 1rem; }
+    .plate {
+      position: relative; display: flex; min-height: 0; flex-direction: column;
+      overflow: hidden; border-radius: 1.5rem; background: var(--elevated);
+      padding: 1.25rem 1.25rem 1.35rem; color: inherit; text-decoration: none;
+      box-shadow: var(--shadow); height: 100%;
+    }
+    .plate:hover { box-shadow: var(--shadow-hover); }
+    .kicker-row { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; }
+    .plate-body { margin-top: 2.75rem; }
+    .plate h3 { font-family: var(--font-display); font-size: 1.875rem; line-height: 1; letter-spacing: -0.03em; font-weight: 500; }
+    .plate-reveal { margin-top: 1.35rem; color: var(--muted); }
+    .plate-go { display: flex; align-items: center; gap: 0.3rem; margin-top: 0.85rem; color: var(--fg); font-weight: 500; }
+    .plate-go svg { width: 1rem; height: 1rem; transition: transform 150ms ease-out; }
+    .hint { display: none; margin-top: 0.5rem; font-size: 0.875rem; color: var(--subtle); }
+    .about { display: grid; gap: 2rem; }
+    .quote { font-family: var(--font-display); font-size: var(--quote); line-height: 1.25; letter-spacing: -0.02em; font-style: italic; font-weight: 500; }
+    .prose { margin-top: 2rem; max-width: 65ch; color: var(--muted); display: grid; gap: 1.25rem; }
+    .skills { margin-top: 3rem; display: grid; gap: 3.5rem; }
+    .rows { list-style: none; margin: 0.75rem 0 0; padding: 0; border-top: 1px solid var(--line); }
+    .rows li { display: grid; gap: 0.25rem; border-bottom: 1px solid var(--line); padding: 1rem 0; }
+    .rows li:hover { background: var(--elevated); }
+    .contact { display: grid; gap: 2.5rem; }
+    .panel { border: 1px solid var(--line); background: var(--elevated); border-radius: 1.5rem; padding: 1rem; }
+    form, .draft { display: flex; flex-direction: column; gap: 1rem; }
+    label { font-size: 0.875rem; font-weight: 500; color: var(--muted); }
+    input, textarea {
+      width: 100%; margin-top: 0.5rem; border-radius: 0.5rem; border: 1px solid var(--line);
+      background: var(--bg); color: var(--fg); padding: 0.65rem 0.75rem; font: inherit;
+    }
+    textarea { min-height: 8rem; resize: vertical; }
+    input[aria-invalid="true"], textarea[aria-invalid="true"] { border-color: var(--danger); }
+    .err { color: var(--danger); font-size: 0.875rem; margin-top: 0.35rem; }
+    .form-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.75rem; }
+    .draft-box { background: var(--bg); border-radius: 0.5rem; padding: 1rem 1.15rem; }
+    .row-btns { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 1.5rem; }
+    footer { border-top: 1px solid var(--line); }
+    .foot { padding: 3.5rem 0 2rem; }
+    .foot-grid { display: grid; gap: 2.5rem; }
+    .word { margin-top: 3.5rem; padding-top: 1.5rem; border-top: 1px solid var(--line); display: flex; flex-direction: column; gap: 0.5rem; }
+    .word p { font-family: var(--font-display); font-size: clamp(2.25rem, 1rem + 6vw, 4.5rem); line-height: 1; letter-spacing: -0.03em; }
+    .enter { animation: rise 500ms var(--ease) both; }
+    .d2 { animation-delay: 80ms; } .d3 { animation-delay: 160ms; } .d4 { animation-delay: 240ms; }
+    @keyframes rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+    @media (min-width: 640px) {
+      .grid { grid-template-columns: 1fr 1fr; }
+      .rows li { grid-template-columns: 11rem 1fr; align-items: baseline; gap: 1.5rem; }
+      .foot-grid { grid-template-columns: 1fr 1fr; }
+      .word { flex-direction: row; align-items: flex-end; justify-content: space-between; }
+    }
+    @media (min-width: 900px) {
+      .hero { grid-template-columns: 2fr 1fr; padding-top: 5rem; }
+      .aside { padding-top: 3.5rem; }
+      .section { padding: 6rem 0; }
+      .grid { grid-template-columns: 1fr 1fr 1fr; }
+      .about, .contact { grid-template-columns: 5fr 7fr; }
+      .skills { grid-template-columns: 1fr 1fr; }
+      .foot-grid { grid-template-columns: repeat(4, 1fr); }
+      .panel { padding: 1.25rem; }
+    }
+    @media (hover: hover) and (pointer: fine) {
+      .hint { display: block; }
+      .plate { min-height: 20.5rem; }
+      .plate-reveal {
+        position: absolute; right: 0; bottom: 0; left: 0; margin: 0; z-index: 2;
+        padding: 1.2rem 1.25rem 1.3rem; background: var(--fg); color: var(--bg);
+        transform: translateY(104%); transition: transform 250ms var(--ease);
+      }
+      .plate:hover .plate-reveal, .plate:focus-visible .plate-reveal { transform: none; }
+      .plate-go { color: var(--bg); }
+      .plate:hover .plate-go svg, .plate:focus-visible .plate-go svg { transform: translate(2px, -2px); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      .enter, .plate, .plate-reveal, .plate-go svg, .press { animation: none; transition: none; }
+      .press:active { scale: 1; }
+    }
+  </style>
+</head>
+<body id="top">
+  <a class="sr" href="#content">Skip to content</a>
+  <header class="mast">
+    <div class="wrap bar">
+      <a class="name" href="#top">Bardia Shah Abadi</a>
+      <nav class="page" aria-label="Page">
+        <a href="#work">Work</a>
+        <a href="#about">About</a>
+        <a href="#skills">Skills</a>
+        <a href="#contact">Contact</a>
+      </nav>
+    </div>
+  </header>
+  <main id="content">
+    <section class="wrap hero">
+      <div>
+        <p class="kicker enter">Folio 2026</p>
+        <h1 class="display enter d2" style="margin-top:1.5rem">Quiet <span class="muted" style="font-style:italic">tools.</span><br />Hard checks.</h1>
+        <p class="lede enter d3">Bardia Shah Abadi — electrical engineering student at the University of Victoria. Public kits for verification, terminals, and study. Built to be read, not trusted on sight.</p>
+        <div class="actions enter d4">
+          <a class="btn press" href="#work">Selected work</a>
+          <a class="btn ghost press" href="#contact">Draft a note</a>
+        </div>
+      </div>
+      <aside class="aside enter d3">
+        <p class="kicker">Contents</p>
+        <ol class="toc">
+          <li><a href="#work"><span><span class="num">01</span>Work</span><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg></a></li>
+          <li><a href="#about"><span><span class="num">02</span>About</span><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg></a></li>
+          <li><a href="#skills"><span><span class="num">03</span>Skills</span><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg></a></li>
+          <li><a href="#contact"><span><span class="num">04</span>Contact</span><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg></a></li>
+        </ol>
+        <p class="meta">University of Victoria<br />Coquitlam, British Columbia</p>
+        <a class="hit" href="https://github.com/mundaneb3at" target="_blank" rel="noreferrer" style="display:inline-flex;min-height:2.75rem;align-items:center;gap:0.3rem;font-size:0.875rem;font-weight:500;text-decoration:none">GitHub <span class="subtle">@mundaneb3at</span></a>
+      </aside>
+    </section>
+
+    <section id="work" class="section">
+      <div class="wrap">
+        <div class="headrow">
+          <div>
+            <p class="kicker">Work</p>
+            <h2 class="title">Nine public kits.</h2>
+            <p class="muted" style="margin-top:1rem">Filtered by what they are for. Each one links to the repository.</p>
+            <p class="hint">Hover a plate to read the short note.</p>
+          </div>
+          <p class="muted" id="showing" style="font-variant-numeric:tabular-nums;font-size:0.875rem">Showing 9</p>
+        </div>
+        <fieldset class="chips">
+          <legend class="sr">Filter projects by category</legend>
+          <button class="chip press" type="button" data-filter="All" aria-pressed="true">All <span class="count">9</span></button>
+          <button class="chip press" type="button" data-filter="Systems" aria-pressed="false">Systems <span class="count">4</span></button>
+          <button class="chip press" type="button" data-filter="Tools" aria-pressed="false">Tools <span class="count">3</span></button>
+          <button class="chip press" type="button" data-filter="Study" aria-pressed="false">Study <span class="count">1</span></button>
+          <button class="chip press" type="button" data-filter="Career" aria-pressed="false">Career <span class="count">1</span></button>
+        </fieldset>
+        <ul class="grid" id="plates"></ul>
+      </div>
+    </section>
+
+    <section id="about" class="section">
+      <div class="wrap about">
+        <div>
+          <p class="kicker">About</p>
+          <p class="muted" style="margin-top:1rem;font-size:0.875rem">University of Victoria<br />Coquitlam, British Columbia</p>
+        </div>
+        <div>
+          <p class="quote">If a side effect is possible, a deterministic check should be able to refuse it.</p>
+          <div class="prose">
+            <p>I study electrical engineering at the University of Victoria and keep a public shelf of small kits under mundaneb3at. Most of them are not product demos. They are readable tools: a verifier, a ledger, a terminal board, a study sim that still runs with the network off.</p>
+            <p>The through-line is operational discipline. Assistants are useful when something else can recompute the claim, quarantine an untrusted note, or show its work. The repositories stay dependency-light on purpose — PowerShell where the machine is Windows, the Python standard library when the point is that it should run anywhere.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="skills" class="section">
+      <div class="wrap">
+        <p class="kicker">Skills</p>
+        <h2 class="title" style="max-width:36rem">What the kits are actually made of.</h2>
+        <div class="skills">
+          <div>
+            <h3 class="kicker">Languages</h3>
+            <ul class="rows">
+              <li><p>Python</p><p class="muted" style="font-size:0.875rem">Stdlib CLIs, SQLite search, transcript ledgers</p></li>
+              <li><p>PowerShell</p><p class="muted" style="font-size:0.875rem">Windows hooks, panels, and notification kits</p></li>
+              <li><p>JavaScript</p><p class="muted" style="font-size:0.875rem">Playbooks and small interfaces</p></li>
+              <li><p>HTML</p><p class="muted" style="font-size:0.875rem">Self-contained offline study simulations</p></li>
+              <li><p>SQL</p><p class="muted" style="font-size:0.875rem">FTS5 and BM25 over local notes</p></li>
+            </ul>
+          </div>
+          <div>
+            <h3 class="kicker">Practice</h3>
+            <ul class="rows">
+              <li><p>Verification gates</p><p class="muted" style="font-size:0.875rem">Recompute a claim before any side effect</p></li>
+              <li><p>Quarantine</p><p class="muted" style="font-size:0.875rem">Read untrusted notes without giving them tools</p></li>
+              <li><p>Agent operations</p><p class="muted" style="font-size:0.875rem">Budgets, contracts, and a failure ledger</p></li>
+              <li><p>Terminal interfaces</p><p class="muted" style="font-size:0.875rem">Status boards and disk explorers</p></li>
+              <li><p>Application kits</p><p class="muted" style="font-size:0.875rem">ATS sweeps, templates, and prompt files</p></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="contact" class="section">
+      <div class="wrap contact">
+        <div>
+          <p class="kicker">Contact</p>
+          <h2 class="title">Write a note.</h2>
+          <p class="muted" style="margin-top:1rem;max-width:22rem">This page does not send mail. It drafts a note you can copy. The work itself is on GitHub.</p>
+          <a href="https://github.com/mundaneb3at" target="_blank" rel="noreferrer" style="display:inline-flex;min-height:2.75rem;align-items:center;margin-top:1rem;font-size:0.875rem;font-weight:500">github.com/mundaneb3at</a>
+        </div>
+        <div class="panel" id="panel">
+          <form id="note" novalidate>
+            <div>
+              <label for="contact-name">Name</label>
+              <input id="contact-name" name="name" autocomplete="name" />
+              <p class="err" id="err-name" hidden></p>
+            </div>
+            <div>
+              <label for="contact-email">Email</label>
+              <input id="contact-email" name="email" type="email" inputmode="email" autocomplete="email" />
+              <p class="err" id="err-email" hidden></p>
+            </div>
+            <div>
+              <label for="contact-message">Note</label>
+              <textarea id="contact-message" name="message"></textarea>
+              <p class="err" id="err-message" hidden></p>
+            </div>
+            <div class="form-foot">
+              <p class="subtle" style="font-size:0.875rem">Nothing leaves this browser.</p>
+              <button class="btn press" type="submit">Draft note</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </section>
+  </main>
+  <footer>
+    <div class="wrap foot">
+      <div class="foot-grid">
+        <div>
+          <p class="serif" style="font-size:1.5rem;letter-spacing:-0.02em">Bardia Shah Abadi</p>
+          <p class="muted" style="margin-top:0.75rem;max-width:18rem;font-size:0.875rem">Electrical engineering student. Public kits for verification, terminals, and study.</p>
+        </div>
+        <nav aria-label="Footer">
+          <p class="kicker">Navigate</p>
+          <div style="margin-top:0.5rem">
+            <a class="hit" href="#work">Work</a><br />
+            <a class="hit" href="#about">About</a><br />
+            <a class="hit" href="#skills">Skills</a><br />
+            <a class="hit" href="#contact">Contact</a>
+          </div>
+        </nav>
+        <div>
+          <p class="kicker">Elsewhere</p>
+          <a class="hit" href="https://github.com/mundaneb3at" target="_blank" rel="noreferrer">GitHub · mundaneb3at</a>
+        </div>
+        <address style="font-style:normal;font-size:0.875rem;color:var(--muted)">
+          <p class="kicker">Colophon</p>
+          <p style="margin-top:0.75rem">Coquitlam, British Columbia</p>
+          <p style="margin-top:0.25rem">University of Victoria</p>
+          <p style="margin-top:0.25rem;font-variant-numeric:tabular-nums">2026</p>
+        </address>
+      </div>
+      <div class="word">
+        <p>Shah Abadi</p>
+        <a class="hit" href="#top">Back to top</a>
+      </div>
+    </div>
+  </footer>
+  <script>
+    const projects = [
+      ["01","AI Courier","Systems","PowerShell","2026","Two assistants trade notes without swallowing each other's prompts: a tool-less reader, a deterministic validator, and human-signed sends.","https://github.com/mundaneb3at/ai-courier"],
+      ["02","Session Backbone","Systems","Python","2026","Turns AI session transcripts into an auditable ledger with receipts. Standard library only, so the trail has nowhere to hide.","https://github.com/mundaneb3at/session-backbone"],
+      ["03","Fanout Gate","Systems","Python","2026","Recomputes every claim a subagent makes, then allows the side effect only if the verifier exits clean.","https://github.com/mundaneb3at/fanout-gate"],
+      ["04","Agent Ops Playbook","Systems","JavaScript","2026","A written doctrine for running a fleet of agents: budgets, verification gates, contract templates, and a failure ledger.","https://github.com/mundaneb3at/agent-ops-playbook"],
+      ["05","Brain Index","Tools","Python","2026","Local full-text search over a markdown workspace. SQLite FTS5 and BM25, with a coverage gate when files go missing.","https://github.com/mundaneb3at/brain-index"],
+      ["06","Panel Kit","Tools","PowerShell","2026","A manifest-driven status board for the terminal. No dependencies. Built for Windows, and honest about it.","https://github.com/mundaneb3at/panel-kit"],
+      ["07","AI Starter Kit","Tools","PowerShell","2026","A small, model-agnostic starter for working with an assistant on Windows: prompt files and a safer terminal.","https://github.com/mundaneb3at/ai-starter-kit"],
+      ["08","Sim Maker Kit","Study","HTML","2026","Build offline study simulations with Learn, Explore, and Practice. One folder, no server, no account.","https://github.com/mundaneb3at/sim-maker-kit"],
+      ["09","Job Journey Kit","Career","Python","2026","An application companion: an ATS resume sweep, templates, and prompts. Released under CC0.","https://github.com/mundaneb3at/job-journey-kit"]
+    ];
+    const list = document.getElementById("plates");
+    const showing = document.getElementById("showing");
+    const arrow = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M7 17 17 7M9 7h8v8"/></svg>';
+    function render(filter) {
+      const rows = filter === "All" ? projects : projects.filter(function (p) { return p[2] === filter; });
+      showing.textContent = "Showing " + rows.length;
+      list.replaceChildren();
+      rows.forEach(function (p) {
+        const li = document.createElement("li");
+        const a = document.createElement("a");
+        a.className = "plate";
+        a.href = p[6];
+        a.target = "_blank";
+        a.rel = "noreferrer";
+        a.innerHTML = '<div class="kicker-row"><span class="subtle" style="font-size:0.875rem;font-variant-numeric:tabular-nums">' + p[0] + '</span><span class="kicker">' + p[2] + '</span></div><div class="plate-body"><h3>' + p[1] + '</h3><p class="muted" style="margin-top:0.5rem;font-size:0.875rem">' + p[3] + ' · <span style="font-variant-numeric:tabular-nums">' + p[4] + '</span></p></div><div class="plate-reveal"><p style="font-size:0.875rem;line-height:1.55">' + p[5] + '</p><p class="plate-go">Repository ' + arrow + '<span class="sr"> (opens in a new tab)</span></p></div>';
+        li.appendChild(a);
+        list.appendChild(li);
+      });
+    }
+    document.querySelectorAll("[data-filter]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        document.querySelectorAll("[data-filter]").forEach(function (b) { b.setAttribute("aria-pressed", "false"); });
+        btn.setAttribute("aria-pressed", "true");
+        render(btn.getAttribute("data-filter"));
+      });
+    });
+    render("All");
+    const sections = ["work", "about", "skills", "contact"].map(function (id) { return document.getElementById(id); });
+    const links = Array.from(document.querySelectorAll("nav.page a"));
+    const io = new IntersectionObserver(function (entries) {
+      const hit = entries.filter(function (e) { return e.isIntersecting; }).sort(function (a, b) { return b.intersectionRatio - a.intersectionRatio; })[0];
+      if (!hit) return;
+      links.forEach(function (a) { a.removeAttribute("aria-current"); if (a.getAttribute("href") === "#" + hit.target.id) a.setAttribute("aria-current", "true"); });
+    }, { rootMargin: "-30% 0px -55% 0px", threshold: [0.15, 0.4, 0.7] });
+    sections.forEach(function (node) { io.observe(node); });
+    const form = document.getElementById("note");
+    const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    function setErr(id, msg) {
+      const el = document.getElementById("err-" + id);
+      const field = document.getElementById("contact-" + id);
+      el.hidden = !msg;
+      el.textContent = msg || "";
+      if (msg) field.setAttribute("aria-invalid", "true"); else field.removeAttribute("aria-invalid");
+    }
+    form.addEventListener("submit", function (event) {
+      event.preventDefault();
+      const name = form.name.value.trim();
+      const email = form.email.value.trim();
+      const message = form.message.value.trim();
+      const errors = {
+        name: name.length < 2 ? "Use at least 2 characters." : name.length > 80 ? "Keep the name under 80 characters." : "",
+        email: emailOk.test(email) ? "" : "Enter an email like name@domain.com.",
+        message: message.length < 12 ? "Write at least a sentence." : message.length > 2000 ? "Keep the note under 2000 characters." : ""
+      };
+      setErr("name", errors.name); setErr("email", errors.email); setErr("message", errors.message);
+      if (errors.name || errors.email || errors.message) return;
+      const panel = document.getElementById("panel");
+      panel.replaceChildren();
+      const box = document.createElement("div");
+      box.className = "draft-box";
+      box.setAttribute("role", "status");
+      const k = document.createElement("p");
+      k.className = "kicker";
+      k.textContent = "Note drafted";
+      const from = document.createElement("p");
+      from.className = "muted";
+      from.style.marginTop = "1rem";
+      from.style.fontSize = "0.875rem";
+      from.textContent = "From " + name;
+      const mail = document.createElement("p");
+      mail.className = "muted";
+      mail.style.fontSize = "0.875rem";
+      mail.textContent = email;
+      const body = document.createElement("p");
+      body.style.marginTop = "1rem";
+      body.style.whiteSpace = "pre-wrap";
+      body.textContent = message;
+      const row = document.createElement("div");
+      row.className = "row-btns";
+      const copy = document.createElement("button");
+      copy.className = "btn press";
+      copy.type = "button";
+      copy.textContent = "Copy note";
+      const again = document.createElement("button");
+      again.className = "btn ghost press";
+      again.type = "button";
+      again.textContent = "Write another";
+      row.append(copy, again);
+      box.append(k, from, mail, body, row);
+      panel.appendChild(box);
+      const text = "From: " + name + " <" + email + ">\n\n" + message;
+      copy.addEventListener("click", function () {
+        navigator.clipboard.writeText(text).then(function () { copy.textContent = "Copied"; }).catch(function () {});
+      });
+      again.addEventListener("click", function () { location.reload(); });
+    });
+  </script>
+</body>
+</html>
