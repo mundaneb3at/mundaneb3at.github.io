@@ -2,6 +2,10 @@
 
 UVic engineering student in Metro Vancouver. I direct AI coding agents to build small, tested developer tools and automations, and publish the evidence. [See all repos on GitHub](https://github.com/mundaneb3at).
 
+## Featured Systems Architecture
+
+- **[Interactive Systems Architecture Floorplans](https://mundaneb3at.github.io/architecture)** — Interactive, zero-dependency SVG/HTML visualizers mapping enterprise engineering ecosystems (Autonomous Learning Harness, Seaspan Cadmatic ↔ Aras PLM digital twin, YVR Baggage Telemetry & Governance). Features hardware-accelerated 2D pan/zoom, dynamic Bezier data flows, and sliding inspection drawers linking each node to verified code and physical test logs.
+
 ## Projects
 
 - **[session-backbone](https://github.com/mundaneb3at/session-backbone)** — A small, deterministic, standard-library-only Python toolchain that turns AI-assistant session history into auditable ledgers. 14 tests, CI passing.

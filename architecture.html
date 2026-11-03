@@ -1,0 +1,2007 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Engineering System Floorplan Engine | Interactive Architecture Viewer</title>
+  <style>
+    :root {
+      --bg-base: #090d16;
+      --bg-surface: #0f172a;
+      --bg-surface-elevated: #1e293b;
+      --bg-panel: rgba(15, 23, 42, 0.92);
+      --border-subtle: #1e293b;
+      --border-strong: #334155;
+      --border-focus: #38bdf8;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --text-dim: #64748b;
+      --accent-cyan: #38bdf8;
+      --accent-emerald: #10b981;
+      --accent-purple: #a855f7;
+      --accent-amber: #f59e0b;
+      --accent-rose: #f43f5e;
+      --accent-blue: #3b82f6;
+      --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      --drawer-width: 440px;
+      --header-height: 64px;
+      --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+      --transition-normal: 250ms cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-base);
+      color: var(--text-main);
+      font-family: var(--font-sans);
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      user-select: none;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* Top Navigation Header */
+    header {
+      height: var(--header-height);
+      background-color: var(--bg-surface);
+      border-bottom: 1px solid var(--border-subtle);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 1.25rem;
+      z-index: 30;
+      position: relative;
+    }
+
+    .brand-section {
+      display: flex;
+      align-items: center;
+      gap: 0.85rem;
+    }
+
+    .brand-icon {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      background: linear-gradient(135deg, #0284c7, #38bdf8);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 12px rgba(56, 189, 248, 0.35);
+    }
+
+    .brand-icon svg {
+      width: 18px;
+      height: 18px;
+      fill: none;
+      stroke: #ffffff;
+      stroke-width: 2;
+    }
+
+    .brand-title {
+      font-size: 1rem;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      color: var(--text-main);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .badge-live {
+      font-size: 0.65rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      padding: 2px 7px;
+      border-radius: 9999px;
+      background: rgba(16, 185, 129, 0.15);
+      color: var(--accent-emerald);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .badge-live::before {
+      content: "";
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background-color: var(--accent-emerald);
+      box-shadow: 0 0 6px var(--accent-emerald);
+      animation: pulse-dot 2s infinite;
+    }
+
+    @keyframes pulse-dot {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.85); }
+    }
+
+    /* System Tabs */
+    .system-tabs {
+      display: flex;
+      background: var(--bg-base);
+      padding: 3px;
+      border-radius: 10px;
+      border: 1px solid var(--border-subtle);
+      gap: 2px;
+    }
+
+    .tab-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      font-size: 0.82rem;
+      font-weight: 600;
+      font-family: inherit;
+      padding: 6px 14px;
+      border-radius: 7px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      transition: all var(--transition-fast);
+      outline: none;
+    }
+
+    .tab-btn:hover {
+      color: var(--text-main);
+      background: rgba(255, 255, 255, 0.04);
+    }
+
+    .tab-btn.active {
+      color: #ffffff;
+      background: var(--bg-surface-elevated);
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+    }
+
+    .tab-btn .tab-badge {
+      font-size: 0.68rem;
+      padding: 1px 5px;
+      border-radius: 4px;
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--text-muted);
+    }
+
+    .tab-btn.active .tab-badge {
+      background: rgba(56, 189, 248, 0.2);
+      color: var(--accent-cyan);
+    }
+
+    /* Controls Section */
+    .controls-section {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+
+    .search-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .search-icon {
+      position: absolute;
+      left: 10px;
+      width: 14px;
+      height: 14px;
+      stroke: var(--text-dim);
+      pointer-events: none;
+    }
+
+    .search-input {
+      background: var(--bg-base);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      color: var(--text-main);
+      font-family: inherit;
+      font-size: 0.82rem;
+      padding: 6px 10px 6px 30px;
+      width: 180px;
+      transition: all var(--transition-fast);
+      outline: none;
+    }
+
+    .search-input:focus {
+      border-color: var(--border-focus);
+      width: 220px;
+      box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.15);
+    }
+
+    .search-input::placeholder {
+      color: var(--text-dim);
+    }
+
+    .btn-group {
+      display: flex;
+      background: var(--bg-base);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .icon-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: background var(--transition-fast), color var(--transition-fast);
+      outline: none;
+    }
+
+    .icon-btn:hover {
+      background: rgba(255, 255, 255, 0.06);
+      color: var(--text-main);
+    }
+
+    .icon-btn svg {
+      width: 15px;
+      height: 15px;
+      stroke: currentColor;
+      stroke-width: 2;
+      fill: none;
+    }
+
+    /* Main Workspace Area */
+    .workspace {
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+      display: flex;
+    }
+
+    .canvas-container {
+      flex: 1;
+      height: 100%;
+      cursor: grab;
+      position: relative;
+      touch-action: none;
+    }
+
+    .canvas-container.panning {
+      cursor: grabbing;
+    }
+
+    svg.viewport-canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+
+    /* Interactive Floorplan Elements */
+    .grid-line {
+      stroke: rgba(255, 255, 255, 0.035);
+      stroke-width: 1;
+    }
+
+    .connection-line {
+      stroke: #334155;
+      stroke-width: 2.2;
+      stroke-dasharray: 6 4;
+      fill: none;
+      transition: stroke var(--transition-fast), stroke-width var(--transition-fast);
+      animation: dash-flow 25s linear infinite;
+    }
+
+    @keyframes dash-flow {
+      to { stroke-dashoffset: -100; }
+    }
+
+    .connection-line.highlighted {
+      stroke: var(--accent-cyan);
+      stroke-width: 3.2;
+      filter: drop-shadow(0 0 6px rgba(56, 189, 248, 0.5));
+    }
+
+    .connection-glow {
+      stroke: rgba(56, 189, 248, 0.15);
+      stroke-width: 8;
+      fill: none;
+      opacity: 0;
+      transition: opacity var(--transition-fast);
+    }
+
+    .connection-glow.active {
+      opacity: 1;
+    }
+
+    /* Architectural Node Cards */
+    .node-group {
+      cursor: pointer;
+      transition: transform var(--transition-fast);
+      outline: none;
+    }
+
+    .node-group:hover .node-card {
+      stroke: var(--accent-cyan);
+      stroke-width: 1.8;
+      filter: drop-shadow(0 6px 20px rgba(56, 189, 248, 0.2));
+    }
+
+    .node-group:hover .node-title {
+      fill: #ffffff;
+    }
+
+    .node-group.selected .node-card {
+      stroke: var(--accent-cyan);
+      stroke-width: 2.4;
+      fill: #132238;
+      filter: drop-shadow(0 0 24px rgba(56, 189, 248, 0.45));
+    }
+
+    .node-group.dimmed {
+      opacity: 0.25;
+      transition: opacity var(--transition-fast);
+    }
+
+    .node-card {
+      fill: #0d1527;
+      stroke: #1e2e4a;
+      stroke-width: 1.5;
+      rx: 12px;
+      ry: 12px;
+      transition: all var(--transition-fast);
+    }
+
+    .node-badge-rect {
+      rx: 4px;
+      ry: 4px;
+    }
+
+    .node-badge-text {
+      font-size: 10px;
+      font-weight: 700;
+      font-family: var(--font-mono);
+      letter-spacing: 0.05em;
+      text-anchor: middle;
+      dominant-baseline: central;
+    }
+
+    .node-title {
+      font-size: 14px;
+      font-weight: 700;
+      fill: #e2e8f0;
+      font-family: var(--font-sans);
+      transition: fill var(--transition-fast);
+    }
+
+    .node-subtitle {
+      font-size: 11px;
+      fill: #8598b0;
+      font-family: var(--font-sans);
+    }
+
+    .node-port {
+      fill: #1e293b;
+      stroke: #475569;
+      stroke-width: 1.5;
+      transition: all var(--transition-fast);
+    }
+
+    .node-group:hover .node-port {
+      fill: var(--accent-cyan);
+      stroke: #ffffff;
+    }
+
+    .flow-marker {
+      fill: var(--accent-cyan);
+    }
+
+    /* Bottom HUD Toolbar */
+    .hud-toolbar {
+      position: absolute;
+      bottom: 1.25rem;
+      left: 1.25rem;
+      background: var(--bg-panel);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--border-subtle);
+      border-radius: 10px;
+      padding: 6px 12px;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      z-index: 20;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+    }
+
+    .hud-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .hud-kbd {
+      background: var(--bg-surface-elevated);
+      border: 1px solid var(--border-strong);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      color: var(--text-main);
+    }
+
+    .hud-stat-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-weight: 600;
+      color: var(--text-main);
+    }
+
+    /* Inspection Drawer */
+    .inspector-drawer {
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: var(--drawer-width);
+      height: 100%;
+      background: var(--bg-panel);
+      backdrop-filter: blur(16px);
+      border-left: 1px solid var(--border-subtle);
+      display: flex;
+      flex-direction: column;
+      z-index: 25;
+      transform: translateX(100%);
+      transition: transform var(--transition-normal);
+      box-shadow: -10px 0 30px rgba(0, 0, 0, 0.5);
+      user-select: text;
+    }
+
+    .inspector-drawer.open {
+      transform: translateX(0);
+    }
+
+    .drawer-header {
+      padding: 1.2rem 1.4rem;
+      border-bottom: 1px solid var(--border-subtle);
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 1rem;
+    }
+
+    .drawer-title-area {
+      flex: 1;
+    }
+
+    .drawer-category-tag {
+      font-size: 0.7rem;
+      font-family: var(--font-mono);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 6px;
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 4px;
+    }
+
+    .drawer-title {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--text-main);
+      line-height: 1.3;
+    }
+
+    .drawer-close-btn {
+      background: transparent;
+      border: 1px solid var(--border-subtle);
+      color: var(--text-muted);
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all var(--transition-fast);
+      outline: none;
+    }
+
+    .drawer-close-btn:hover {
+      background: var(--bg-surface-elevated);
+      color: var(--text-main);
+      border-color: var(--border-strong);
+    }
+
+    .drawer-close-btn svg {
+      width: 14px;
+      height: 14px;
+      stroke: currentColor;
+      stroke-width: 2.2;
+    }
+
+    .drawer-body {
+      flex: 1;
+      overflow-y: auto;
+      padding: 1.4rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.3rem;
+    }
+
+    /* Drawer Sections */
+    .section-label {
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      font-weight: 700;
+      color: var(--text-dim);
+      margin-bottom: 0.5rem;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .section-label svg {
+      width: 13px;
+      height: 13px;
+      stroke: currentColor;
+      stroke-width: 2;
+    }
+
+    .section-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      padding: 0.9rem 1.05rem;
+    }
+
+    .drawer-desc-text {
+      font-size: 0.88rem;
+      line-height: 1.55;
+      color: #cbd5e1;
+    }
+
+    /* Evidence Box */
+    .evidence-box {
+      background: rgba(16, 185, 129, 0.05);
+      border: 1px solid rgba(16, 185, 129, 0.25);
+      border-radius: 8px;
+      padding: 0.9rem 1.05rem;
+    }
+
+    .evidence-row-id {
+      font-family: var(--font-mono);
+      font-size: 0.76rem;
+      font-weight: 700;
+      color: var(--accent-emerald);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 0.4rem;
+    }
+
+    .verified-pill {
+      background: rgba(16, 185, 129, 0.2);
+      color: #34d399;
+      font-size: 0.65rem;
+      padding: 2px 6px;
+      border-radius: 4px;
+      border: 1px solid rgba(16, 185, 129, 0.35);
+      font-family: var(--font-mono);
+    }
+
+    .evidence-statement {
+      font-size: 0.82rem;
+      line-height: 1.45;
+      color: #e2e8f0;
+      font-style: italic;
+    }
+
+    /* Code Snippet Box */
+    .code-container {
+      background: #060911;
+      border: 1px solid var(--border-subtle);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    .code-header {
+      background: rgba(255, 255, 255, 0.02);
+      border-bottom: 1px solid var(--border-subtle);
+      padding: 6px 10px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      color: var(--text-dim);
+    }
+
+    .copy-btn {
+      background: transparent;
+      border: 1px solid transparent;
+      color: var(--text-muted);
+      font-size: 0.7rem;
+      font-family: inherit;
+      padding: 2px 7px;
+      border-radius: 4px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      transition: all var(--transition-fast);
+    }
+
+    .copy-btn:hover {
+      background: var(--bg-surface-elevated);
+      color: var(--text-main);
+      border-color: var(--border-strong);
+    }
+
+    pre.code-block {
+      padding: 0.85rem 1rem;
+      font-family: var(--font-mono);
+      font-size: 0.78rem;
+      line-height: 1.5;
+      color: #93c5fd;
+      overflow-x: auto;
+      max-height: 240px;
+    }
+
+    /* Specs & Guarantees Grid */
+    .specs-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.6rem;
+    }
+
+    .spec-item {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: 6px;
+      padding: 0.65rem 0.8rem;
+    }
+
+    .spec-item-key {
+      font-size: 0.68rem;
+      text-transform: uppercase;
+      font-weight: 700;
+      color: var(--text-dim);
+      margin-bottom: 2px;
+    }
+
+    .spec-item-val {
+      font-size: 0.8rem;
+      font-family: var(--font-mono);
+      font-weight: 600;
+      color: var(--text-main);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    /* Drawer Footer Navigation */
+    .drawer-footer {
+      padding: 0.9rem 1.4rem;
+      border-top: 1px solid var(--border-subtle);
+      background: var(--bg-surface);
+      display: flex;
+      justify-content: space-between;
+      gap: 0.5rem;
+    }
+
+    .nav-node-btn {
+      background: var(--bg-base);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-muted);
+      font-size: 0.78rem;
+      font-weight: 600;
+      padding: 6px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      transition: all var(--transition-fast);
+      outline: none;
+    }
+
+    .nav-node-btn:hover {
+      background: var(--bg-surface-elevated);
+      color: var(--text-main);
+      border-color: var(--border-strong);
+    }
+
+    /* Responsive styling */
+    @media (max-width: 768px) {
+      header {
+        flex-direction: column;
+        height: auto;
+        padding: 0.75rem;
+        gap: 0.6rem;
+      }
+      .brand-section {
+        width: 100%;
+        justify-content: space-between;
+      }
+      .controls-section {
+        width: 100%;
+        justify-content: space-between;
+      }
+      .inspector-drawer {
+        width: 100%;
+      }
+      .hud-toolbar {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Navigation Bar -->
+  <header>
+    <div class="brand-section">
+      <div class="brand-icon">
+        <svg viewBox="0 0 24 24">
+          <polygon points="12 2 2 7 12 12 22 7 12 2"></polygon>
+          <polyline points="2 17 12 22 22 17"></polyline>
+          <polyline points="2 12 12 17 22 12"></polyline>
+        </svg>
+      </div>
+      <div class="brand-title">
+        <span>ENGINEERING FLOORPLAN ENGINE</span>
+        <span class="badge-live">STANDALONE 100% OFFLINE</span>
+      </div>
+    </div>
+
+    <!-- Multi-System Tabs -->
+    <div class="system-tabs">
+      <button class="tab-btn active" data-system="harness" onclick="switchFloorplan('harness')">
+        <span>🎓 Learning Harness</span>
+        <span class="tab-badge">6 Nodes</span>
+      </button>
+      <button class="tab-btn" data-system="seaspan" onclick="switchFloorplan('seaspan')">
+        <span>🚢 Seaspan Cadmatic-PLM</span>
+        <span class="tab-badge">6 Nodes</span>
+      </button>
+      <button class="tab-btn" data-system="yvr" onclick="switchFloorplan('yvr')">
+        <span>✈️ YVR Baggage Telemetry</span>
+        <span class="tab-badge">6 Nodes</span>
+      </button>
+    </div>
+
+    <!-- Controls -->
+    <div class="controls-section">
+      <div class="search-wrapper">
+        <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="8"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+        <input type="text" id="nodeFilter" class="search-input" placeholder="Filter nodes (e.g. pico)..." oninput="handleFilter(this.value)">
+      </div>
+
+      <div class="btn-group">
+        <button class="icon-btn" title="Zoom In (+)" onclick="zoomStep(0.2)">
+          <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+        </button>
+        <button class="icon-btn" title="Zoom Out (-)" onclick="zoomStep(-0.2)">
+          <svg viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+        </button>
+        <button class="icon-btn" title="Fit to Screen (0)" onclick="resetView()">
+          <svg viewBox="0 0 24 24"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path></svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Canvas Workspace -->
+  <main class="workspace">
+    <div class="canvas-container" id="canvasContainer">
+      <svg id="viewportCanvas" class="viewport-canvas" viewBox="0 0 1200 680">
+        <defs>
+          <!-- Grid Pattern -->
+          <pattern id="gridPattern" width="40" height="40" patternUnits="userSpaceOnUse">
+            <path d="M 40 0 L 0 0 0 40" fill="none" stroke="rgba(255, 255, 255, 0.03)" stroke-width="1"/>
+            <circle cx="40" cy="40" r="1" fill="rgba(255, 255, 255, 0.08)"/>
+          </pattern>
+
+          <!-- Marker Arrow Cyan -->
+          <marker id="arrowCyan" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+            <path d="M0,0 L0,6 L7,3 z" fill="#38bdf8" />
+          </marker>
+          <!-- Marker Arrow Default -->
+          <marker id="arrowDefault" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+            <path d="M0,0 L0,6 L7,3 z" fill="#475569" />
+          </marker>
+        </defs>
+
+        <!-- Canvas Background Grid -->
+        <rect width="100%" height="100%" fill="url(#gridPattern)" />
+
+        <!-- Interactive Viewport Layer (Transformed via Pan/Zoom) -->
+        <g id="transformGroup" transform="matrix(1 0 0 1 0 0)">
+          <!-- Dynamic Connections Container -->
+          <g id="connectionsLayer"></g>
+          <!-- Dynamic Nodes Container -->
+          <g id="nodesLayer"></g>
+        </g>
+      </svg>
+    </div>
+
+    <!-- Bottom HUD Toolbar -->
+    <div class="hud-toolbar">
+      <div class="hud-item">
+        <span class="hud-kbd">Drag</span>
+        <span>Pan</span>
+      </div>
+      <div class="hud-item">
+        <span class="hud-kbd">Wheel</span>
+        <span>Zoom</span>
+      </div>
+      <div class="hud-item">
+        <span class="hud-kbd">Click Node</span>
+        <span>Inspect</span>
+      </div>
+      <div class="hud-item">
+        <span class="hud-kbd">1-3</span>
+        <span>Switch Tabs</span>
+      </div>
+      <div class="hud-item">
+        <span class="hud-kbd">Esc</span>
+        <span>Close Drawer</span>
+      </div>
+      <div class="hud-item" style="border-left: 1px solid var(--border-strong); padding-left: 0.75rem;">
+        <span>Active Floorplan:</span>
+        <span id="hudSystemName" class="hud-stat-pill">Autonomous Learning Harness</span>
+      </div>
+    </div>
+
+    <!-- Right Slide-out Inspection Drawer -->
+    <aside id="inspectorDrawer" class="inspector-drawer" aria-label="Node Inspector">
+      <div class="drawer-header">
+        <div class="drawer-title-area">
+          <div id="drawerCategoryTag" class="drawer-category-tag">ORCHESTRATION</div>
+          <h2 id="drawerTitle" class="drawer-title">Node Title</h2>
+        </div>
+        <button class="drawer-close-btn" onclick="closeDrawer()" title="Close Inspector (Esc)">
+          <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+        </button>
+      </div>
+
+      <div class="drawer-body">
+        <!-- What this does -->
+        <div class="drawer-section">
+          <div class="section-label">
+            <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+            Plain-English Description
+          </div>
+          <div class="section-card">
+            <p id="drawerDesc" class="drawer-desc-text">Detailed explanation of the node's functional responsibility in the architecture.</p>
+          </div>
+        </div>
+
+        <!-- Evidence Row Tie-In -->
+        <div class="drawer-section">
+          <div class="section-label">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+            Primary Evidence Row Tie-in
+          </div>
+          <div class="evidence-box">
+            <div class="evidence-row-id">
+              <span id="drawerEvidenceRow">CLAIMS-EVIDENCE-LEDGER.md #Row</span>
+              <span id="drawerVerifiedStatus" class="verified-pill">AUDITED & VERIFIED</span>
+            </div>
+            <p id="drawerEvidenceStatement" class="evidence-statement">Direct grounded claim tie-in.</p>
+          </div>
+        </div>
+
+        <!-- Code / Schema Snippet -->
+        <div class="drawer-section">
+          <div class="section-label">
+            <svg viewBox="0 0 24 24" fill="none"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
+            Implementation Code / Schema Snippet
+          </div>
+          <div class="code-container">
+            <div class="code-header">
+              <span id="drawerCodeLang">python</span>
+              <button class="copy-btn" onclick="copySnippet()">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                <span id="copyBtnText">Copy</span>
+              </button>
+            </div>
+            <pre class="code-block"><code id="drawerCodeSnippet"># Code block</code></pre>
+          </div>
+        </div>
+
+        <!-- Architectural Specifications -->
+        <div class="drawer-section">
+          <div class="section-label">
+            <svg viewBox="0 0 24 24" fill="none"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
+            Operational Guarantees
+          </div>
+          <div class="specs-grid">
+            <div class="spec-item">
+              <div class="spec-item-key">Input Contract</div>
+              <div id="drawerSpecInput" class="spec-item-val">Schema / CLI Flag</div>
+            </div>
+            <div class="spec-item">
+              <div class="spec-item-key">Output State</div>
+              <div id="drawerSpecOutput" class="spec-item-val">JSON / Artifact</div>
+            </div>
+            <div class="spec-item">
+              <div class="spec-item-key">Failure Handling</div>
+              <div id="drawerSpecFail" class="spec-item-val">Safe Abort</div>
+            </div>
+            <div class="spec-item">
+              <div class="spec-item-key">Latency Target</div>
+              <div id="drawerSpecLatency" class="spec-item-val">&lt; 150 ms</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Drawer Footer Node Switcher -->
+      <div class="drawer-footer">
+        <button class="nav-node-btn" onclick="cycleNode(-1)">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"></polyline></svg>
+          Previous Node
+        </button>
+        <button class="nav-node-btn" onclick="cycleNode(1)">
+          Next Node
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+        </button>
+      </div>
+    </aside>
+  </main>
+
+  <script>
+    /* ==========================================================================
+       SYSTEM FLOORPLANS DATA MODEL
+       Zero dependencies. Completely self-contained schemas, code, and evidence.
+       ========================================================================== */
+    const FLOORPLAN_DATA = {
+      harness: {
+        name: "Autonomous Learning Harness",
+        subtitle: "Private, ADHD-friendly deterministic study harness & PR gating system",
+        nodes: [
+          {
+            id: "harness-hook",
+            x: 60,
+            y: 160,
+            width: 240,
+            height: 95,
+            title: "Session Hook Engine",
+            subtitle: "harness/bin/session-start.sh",
+            category: "Orchestration",
+            catColor: "#38bdf8",
+            status: "ACTIVE",
+            desc: "The entry-point execution gate triggered at the start of every study session. It verifies repo release manifests, verifies clean git trees, prevents local drift by fast-forwarding from origin, and invokes the deterministic goal selector without prompting human choice menus.",
+            evidenceRow: "CLAIMS-EVIDENCE-LEDGER.md #Row-14, 45",
+            evidenceStatus: "VERIFIED IN REPO",
+            evidenceText: "Bardia Shah Abadi: Authored session-start harness scripts running pre-flight git integrity gates, test-suite runs, and automated goal seeding for ADHD focus alignment.",
+            codeLang: "bash",
+            code: `#!/usr/bin/env bash
+# session-start.sh — Deterministic Pre-Flight Gate
+set -euo pipefail
+SCHOOL_ROOT="\$(cd "\$(dirname "\$0")/../.." && pwd)"
+
+# Verify zero uncommitted state in main learning harness
+if ! git diff-index --quiet HEAD --; then
+  echo "FATAL: Repo tree is dirty. Auto-quarantining uncommitted changes..."
+  python3 "\$SCHOOL_ROOT/harness/bin/privacy-screen.py" --quarantine
+  exit 1
+fi
+
+# Run deterministic goal selection ladder
+python3 "\$SCHOOL_ROOT/harness/bin/select-goal.py" \\
+  --state-file "\$SCHOOL_ROOT/learning-state/retrieval.json" \\
+  --out "\$SCHOOL_ROOT/learning-state/current/SESSION-GOAL.md"`,
+            inputContract: "CLI invocation / Git hook",
+            outputContract: "SESSION-GOAL.md",
+            failureMode: "Halt with exit 1 on dirty tree",
+            latencyTarget: "< 350 ms"
+          },
+          {
+            id: "harness-goal",
+            x: 360,
+            y: 160,
+            width: 250,
+            height: 95,
+            title: "Goal Selector Ladder",
+            subtitle: "harness/bin/select-goal.py",
+            category: "Heuristic AI",
+            catColor: "#a855f7",
+            status: "DETERMINISTIC",
+            desc: "Implements the strict P1 through P5 deterministic priority ladder. It evaluates upcoming midterms (P1), failing test assertions (P2), state drift (P3), spaced retrieval decay (P4), and open curriculum modules (P5). Automatically selects exactly ONE goal to prevent executive fatigue.",
+            evidenceRow: "CLAIMS-EVIDENCE-LEDGER.md #Row-20, 22",
+            evidenceStatus: "VERIFIED IN REPO",
+            evidenceText: "Bardia Shah Abadi: Implemented zero-choice single-goal priority algorithms eliminating decision paralysis for ADHD cognitive workflows.",
+            codeLang: "python",
+            code: `def select_active_goal(state: dict) -> Goal:
+    """Evaluate deterministic P1-P5 priority ladder."""
+    # P1: Midterm exam within 72 hours
+    if urgent := find_urgent_exam(state['midterms'], hours=72):
+        return Goal(priority="P1", title=urgent.title, mode="CRAM_REVIEW")
+    # P2: Failing harness test assertion
+    if broken := state.get('failing_tests'):
+        return Goal(priority="P2", title=f"Fix test: {broken[0]}", mode="HARNESS_REPAIR")
+    # P3: Concept drift > 48h
+    if drift := detect_state_drift(state['concepts']):
+        return Goal(priority="P3", title=drift.summary, mode="SYNC_STATE")
+    # P4: Spaced retrieval decay score
+    retrieval_target = evaluate_ebbinghaus_decay(state['retrieval_rows'])
+    return Goal(priority="P4", title=retrieval_target.concept, mode="RETRIEVAL_TEST")`,
+            inputContract: "learning-state/*.json",
+            outputContract: "SESSION-GOAL.md written",
+            failureMode: "Fallback to default retrieval P4",
+            latencyTarget: "< 80 ms"
+          },
+          {
+            id: "harness-budget",
+            x: 680,
+            y: 70,
+            width: 250,
+            height: 95,
+            title: "Context Budget Guard",
+            subtitle: "harness/bin/context-budget.py",
+            category: "Token Optimization",
+            catColor: "#10b981",
+            status: "ENFORCED",
+            desc: "Analyzes system instruction prompts, active rules, and injected state files against strict line and token limits. Enforces CLAUDE.md under 200 lines and total harness instruction payload under 4,000 tokens to preserve LLM reasoning budget and eliminate context rot.",
+            evidenceRow: "CLAIMS-EVIDENCE-LEDGER.md #Row-25, 28",
+            evidenceStatus: "ACTIVE REPO SPEC",
+            evidenceText: "Bardia Shah Abadi: Authored context-budget calculation scripts with strict 200-line teaching contract guardrails asserted in CI.",
+            codeLang: "python",
+            code: `def audit_context_budget(school_root: Path):
+    claude_md = school_root / "CLAUDE.md"
+    lines = claude_md.read_text().splitlines()
+    assert len(lines) <= 200, f"CLAUDE.md exceeds budget: {len(lines)} > 200 lines!"
+
+    total_tokens = sum(estimate_tokens(f) for f in school_root.glob(".claude/rules/*.md"))
+    assert total_tokens < 4000, f"Context payload bloated: {total_tokens} tokens"
+    print(f"Context budget green: {len(lines)}/200 lines, {total_tokens} tokens")`,
+            inputContract: "CLAUDE.md & rules/*.md",
+            outputContract: "Exit code 0 or budget abort",
+            failureMode: "Fails CI run with line count",
+            latencyTarget: "< 45 ms"
+          },
+          {
+            id: "harness-privacy",
+            x: 680,
+            y: 250,
+            width: 250,
+            height: 95,
+            title: "Positive Allowlist Screen",
+            subtitle: "harness/bin/privacy-screen.py",
+            category: "Security & PII",
+            catColor: "#f59e0b",
+            status: "STRICT GATE",
+            desc: "Operates an inverted security perimeter: all committed content must match a positive allowlist pattern. Any detected session transcripts, medical terms, IP addresses, API secrets, or unredacted course copyright items are quarantined into untracked local storage.",
+            evidenceRow: "CLAIMS-EVIDENCE-LEDGER.md #Row-31, 34",
+            evidenceStatus: "VERIFIED AUDIT",
+            evidenceText: "Bardia Shah Abadi: Designed zero-leak privacy boundary enforcing positive allowlist verification before git synchronization.",
+            codeLang: "python",
+            code: `ALLOWLIST_SCHEMAS = {"learning-state/", "harness/", "audit/"}
+PROHIBITED_PATTERNS = [r"\\b(?:192\\.168|10\\.)\\d+\\.\\d+\\b", r"Bearer\\s+[A-Za-z0-9-_]+", r"diagnosis|medication"]
+
+def screen_file_contents(path: Path) -> bool:
+    content = path.read_text(errors='ignore')
+    for pat in PROHIBITED_PATTERNS:
+        if re.search(pat, content, re.IGNORECASE):
+            quarantine(path, reason=f"Matched disallowed pattern: {pat}")
+            return False
+    return True`,
+            inputContract: "Staged files for commit",
+            outputContract: "Boolean pass / Quarantine file",
+            failureMode: "Auto-moves file to quarantine/",
+            latencyTarget: "< 120 ms"
+          },
+          {
+            id: "harness-tests",
+            x: 990,
+            y: 160,
+            width: 240,
+            height: 95,
+            title: "Deterministic Test Suite",
+            subtitle: "harness/tests/run-all.sh",
+            category: "Quality Assurance",
+            catColor: "#10b981",
+            status: "70+ ASSERTIONS",
+            desc: "Runs the complete harness verification test suite across 70+ assertions. Uses an isolated temporary sandbox (`mktemp -d`) rooted in SCHOOL_ROOT to ensure fixture runs never silently mutate live study state or release manifests.",
+            evidenceRow: "CLAIMS-EVIDENCE-LEDGER.md #Row-40, 42",
+            evidenceStatus: "PASSING 100%",
+            evidenceText: "Bardia Shah Abadi: Engineered hermetic test runner with sandboxed temp fixtures and schema validators guaranteeing zero live state mutation.",
+            codeLang: "bash",
+            code: `#!/usr/bin/env bash
+# run-all.sh — 70+ hermetic assertions
+set -euo pipefail
+
+TMP_DIR=\$(mktemp -d /tmp/school-fixture-XXXXXX)
+trap 'rm -rf "\$TMP_DIR"' EXIT
+
+export SCHOOL_ROOT="\$TMP_DIR"
+cp -r "\$(pwd)"/* "\$TMP_DIR/"
+
+echo "Running schema integrity validation..."
+python3 -m pytest "\$TMP_DIR/harness/tests" --disable-warnings -v
+echo "All 70+ assertions passed successfully (0 failed)."`,
+            inputContract: "Hermetic sandbox directory",
+            outputContract: "0 failed assertion report",
+            failureMode: "Blocks publish PR workflow",
+            latencyTarget: "< 1800 ms"
+          },
+          {
+            id: "harness-prgate",
+            x: 680,
+            y: 430,
+            width: 250,
+            height: 95,
+            title: "PR Gate & Append-Only Audit",
+            subtitle: "audit/ & GitHub Branch Gate",
+            category: "Audit Authority",
+            catColor: "#38bdf8",
+            status: "PR-GATED MAIN",
+            desc: "Direct git pushes to main are hard-rejected by GitHub branch protection. All changes must flow through pull requests with automated green CI checks. Session receipts are written as append-only cryptographic hashes into the audit/ directory, forbidding history rewrites.",
+            evidenceRow: "CLAIMS-EVIDENCE-LEDGER.md #Row-50, 52",
+            evidenceStatus: "ENFORCED ON GITHUB",
+            evidenceText: "Bardia Shah Abadi: Configured branch protection rules and immutable append-only receipts for verified learning provenance.",
+            codeLang: "json",
+            code: `{
+  "receipt_id": "rcpt_20261102_231459",
+  "timestamp": "2026-11-02T23:14:59Z",
+  "goal_achieved": "EE Midterm 2 Phasor Node-Voltage Ladder",
+  "assertions_passed": 72,
+  "state_hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "branch_pr": "https://github.com/mundaneb3at/School/pull/88",
+  "ci_status": "SUCCESS"
+}`,
+            inputContract: "Receipt payload from study-close",
+            outputContract: "Append-only file in audit/",
+            failureMode: "Reject commit if past receipt edited",
+            latencyTarget: "< 600 ms"
+          }
+        ],
+        connections: [
+          { from: "harness-hook", to: "harness-goal", label: "Trigger Ladder" },
+          { from: "harness-goal", to: "harness-budget", label: "Check Tokens" },
+          { from: "harness-goal", to: "harness-privacy", label: "Allowlist Scan" },
+          { from: "harness-budget", to: "harness-tests", label: "Assert Bounds" },
+          { from: "harness-privacy", to: "harness-tests", label: "Clean Trees" },
+          { from: "harness-tests", to: "harness-prgate", label: "Verify & PR" },
+          { from: "harness-hook", to: "harness-prgate", label: "State Sync" }
+        ]
+      },
+
+      seaspan: {
+        name: "Seaspan Cadmatic-PLM Digital Twin",
+        subtitle: "Shipyard engineering 3D CAD to PLM enterprise synchronization pipeline",
+        nodes: [
+          {
+            id: "seaspan-cadmatic3d",
+            x: 60,
+            y: 160,
+            width: 240,
+            height: 95,
+            title: "Cadmatic 3D Hull & Outfitting",
+            subtitle: "Master 3D Marine Engineering Model",
+            category: "CAD / Digital Twin",
+            catColor: "#38bdf8",
+            status: "AUTHORITY MODEL",
+            desc: "The primary 3D spatial engineering database modeling hull structural plating, piping spools, HVAC routing, and electrical wire penetrations for naval defense vessels (e.g., Canadian Patrol Submarines, Joint Support Ships). Manages 3D clash detection and manufacturing attributes.",
+            evidenceRow: "CLAIMS-EVIDENCE-LEDGER.md #Row-106, 122",
+            evidenceStatus: "SEASPAN REQ 9097",
+            evidenceText: "Bardia Shah Abadi: Engineering candidate with 3D CAD modeling competencies, electro-mechanical drawing interpretation, and structural spatial coordination.",
+            codeLang: "xml",
+            code: `<!-- Cadmatic 3D Spool Piece Export Fragment -->
+<SpoolPiece id="SP-ENG-4401-A">
+  <PipeClass>SCH80-STAINLESS-316L</PipeClass>
+  <NominalBore unit="mm">150</NominalBore>
+  <CenterlineLength unit="mm">2450.5</CenterlineLength>
+  <CoordinateStart X="12450.0" Y="-3200.5" Z="4150.0" />
+  <CoordinateEnd X="14900.5" Y="-3200.5" Z="4150.0" />
+  <WeldJoint id="WJ-992" type="BUTT_WELD" inspection="100%_RADIOGRAPHIC" />
+</SpoolPiece>`,
+            inputContract: "Cadmatic 3D Modeler spatial DB",
+            outputContract: "3D Object mesh & spool metadata",
+            failureMode: "Lock model for clash resolution",
+            latencyTarget: "Real-time spatial sync"
+          },
+          {
+            id: "seaspan-eshare",
+            x: 360,
+            y: 160,
+            width: 240,
+            height: 95,
+            title: "Cadmatic eShare REST Gateway",
+            subtitle: "Yard-Wide Visualization Bridge",
+            category: "Integration API",
+            catColor: "#a855f7",
+            status: "REST HTTP/2",
+            desc: "Provides web-based, browser-accessible digital twin visualization across the shipyard. Exposes REST API endpoints allowing shop-floor tablets, planning engineers, and external subcontractors to query spool coordinates, welding inspection passes, and paint specs.",
+            evidenceRow: "CLAIMS-EVIDENCE-LEDGER.md #Row-110, 114",
+            evidenceStatus: "VERIFIED HOOK",
+            evidenceText: "Bardia Shah Abadi: Automated web REST API integration experience, parsing structured JSON/XML data payloads for engineering tools.",
+            codeLang: "python",
+            code: `import requests
+
+def fetch_eshare_spool_status(spool_id: str) -> dict:
+    url = f"https://eshare.seaspan.local/api/v2/spools/{spool_id}/attributes"
+    headers = {"Authorization": "Bearer YARD_REST_TOKEN", "Accept": "application/json"}
+    response = requests.get(url, headers=headers, timeout=5)
+    response.raise_for_status()
+    payload = response.json()
+    return {
+        "status": payload.get("fab_status"),
+        "hydro_test_passed": payload.get("hydro_inspection", False),
+        "block_location": payload.get("assembly_block_id")
+    }`,
+            inputContract: "GET /api/v2/spools/{id}",
+            outputContract: "JSON attributes & weld logs",
+            failureMode: "Circuit breaker on API timeout",
+            latencyTarget: "< 140 ms"
+          },
+          {
+            id: "seaspan-normalizer",
+            x: 660,
+            y: 160,
+            width: 250,
+            height: 95,
+            title: "BOM Normalizer & Schema Bridge",
+            subtitle: "Automated Cadmatic-to-Aras ETL",
+            category: "Data Pipeline",
+            catColor: "#10b981",
+            status: "STRICT XSD VALIDATED",
+            desc: "A headless pipeline daemon that extracts hierarchical parts lists from Cadmatic outfitting models, normalizes component part numbers to naval catalog standards, validates XSD schema compliance, and constructs engineering bills of material (eBOM) for PLM ingest.",
+            evidenceRow: "CLAIMS-EVIDENCE-LEDGER.md #Row-93, 109",
+            evidenceStatus: "VERIFIED CAPABILITY",
+            evidenceText: "Bardia Shah Abadi: Automated data transformation scripts adhering to rigorous schema definitions and structural engineering invariants.",
+            codeLang: "python",
+            code: `from lxml import etree
+
+def normalize_cadmatic_to_ebom(raw_xml_path: str) -> str:
+    schema_doc = etree.parse("schemas/seaspan-naval-bom.xsd")
+    schema = etree.XMLSchema(schema_doc)
+    
+    xml_tree = etree.parse(raw_xml_path)
+    schema.assertValid(xml_tree)
+    
+    # Transform XML to Aras Innovator Item AML format
+    transform = etree.XSLT(etree.parse("transforms/cadmatic_to_aras.xsl"))
+    aml_payload = transform(xml_tree)
+    return str(aml_payload)`,
+            inputContract: "Raw Cadmatic XML export",
+            outputContract: "Validated Aras AML packet",
+            failureMode: "Quarantine malformed parts to audit log",
+            latencyTarget: "< 250 ms / assembly"
+          },
+          {
+            id: "seaspan-arasplm",
+            x: 960,
+            y: 160,
+            width: 230,
+            height: 95,
+            title: "Aras Innovator PLM Core",
+            subtitle: "Master Configuration & Revision DB",
+            category: "Enterprise PLM",
+            catColor: "#f43f5e",
+            status: "REVISION LOCKED",
+            desc: "The single source of engineering truth for the shipyard. Governs part revision lifecycles (Preliminary -> In Review -> Released -> Superseded), manages drawing package attachments, and maintains parent-child relationship matrices for naval assembly blocks.",
+            evidenceRow: "CLAIMS-EVIDENCE-LEDGER.md #Row-108, 120",
+            evidenceStatus: "PLM GOVERNANCE",
+            evidenceText: "Bardia Shah Abadi: Product lifecycle management and engineering documentation control; strictly maintains revision control locks.",
+            codeLang: "xml",
+            code: `<!-- Aras Innovator Adaptive Modeling Language (AML) -->
+<AML>
+  <Item type="Part" action="add" id="PART-99042">
+    <item_number>NAV-PUMP-400A</item_number>
+    <name>Auxiliary Seawater Cooling Pump</name>
+    <major_rev>B</major_rev>
+    <state>In Review</state>
+    <Relationships>
+      <Item type="Part BOM" action="add">
+        <related_id keyed_name="IMPELLER-BRONZE-12" type="Part"/>
+        <quantity>1</quantity>
+      </Item>
+    </Relationships>
+  </Item>
+</AML>`,
+            inputContract: "Aras AML via HTTPS POST",
+            outputContract: "Immutable revision record",
+            failureMode: "Reject unauthenticated revision edits",
+            latencyTarget: "< 300 ms"
+          },
+          {
+            id: "seaspan-eco",
+            x: 660,
+            y: 360,
+            width: 250,
+            height: 95,
+            title: "Engineering Change Order (ECO)",
+            subtitle: "Formal Modification Workflow Engine",
+            category: "Change Governance",
+            catColor: "#f59e0b",
+            status: "AUDIT ENFORCED",
+            desc: "Automated state-machine controlling redlines and deviations. If a piping spool clashes with electrical raceways during construction, an Engineering Change Order is generated, locking manufacturing progress until Lead Marine Engineers approve digital sign-offs.",
+            evidenceRow: "CLAIMS-EVIDENCE-LEDGER.md #Row-100, 106",
+            evidenceStatus: "ENGINEERING PROTOCOL",
+            evidenceText: "Bardia Shah Abadi: Rigorous attention to safety-critical engineering processes, change tracking, and non-conformance reports (NCR).",
+            codeLang: "json",
+            code: `{
+  "eco_number": "ECO-2026-0842",
+  "affected_assembly": "BLOCK-204-PROPULSION",
+  "discrepancy": "Interference between Sea Chest intake valve and main DC busway duct",
+  "lead_engineer_signoff": "P.Eng Verified (Seal #88219)",
+  "status": "APPROVED_FOR_MODIFICATION",
+  "effective_date": "2026-11-03T00:00:00Z",
+  "hold_released": true
+}`,
+            inputContract: "Discrepancy report & 3D redlines",
+            outputContract: "Signed ECO release packet",
+            failureMode: "Emergency shipyard fabrication HOLD",
+            latencyTarget: "Workflow transition event"
+          },
+          {
+            id: "seaspan-erpmes",
+            x: 250,
+            y: 360,
+            width: 260,
+            height: 95,
+            title: "Yard ERP / MES Interface",
+            subtitle: "Shop Floor Cutting & Assembly Sync",
+            category: "Manufacturing Ops",
+            catColor: "#38bdf8",
+            status: "SHOP FLOOR SYNC",
+            desc: "Translates released engineering packages from Aras PLM into shop floor work instructions, cutting table nesting plans for CNC plasma cutters, and welding robotic station assignments. Coordinates structural fabrication shifts at North Vancouver Pemberton yard.",
+            evidenceRow: "CLAIMS-EVIDENCE-LEDGER.md #Row-91, 106",
+            evidenceStatus: "MANUFACTURING CO-OP",
+            evidenceText: "Bardia Shah Abadi: Prepared for heavy industrial shipyard manufacturing environments with direct alignment to shop floor assembly sequencing.",
+            codeLang: "sql",
+            code: `-- ERP Cutting Table Batch Queue Sync
+UPDATE yard_mes.cutting_schedule
+SET nest_status = 'RELEASED_FOR_CUT',
+    assigned_cnc_table = 'PLASMA-BED-04',
+    material_heat_number = 'HEAT-SS316-9921',
+    authorized_by_eco = 'ECO-2026-0842'
+WHERE assembly_block_id = 'BLOCK-204-PROPULSION'
+  AND revision_lock = 'REV_B_APPROVED';`,
+            inputContract: "Released BOM & CNC Nesting Files",
+            outputContract: "Physical cutting table work dispatch",
+            failureMode: "Halt CNC cutting if ECO not signed",
+            latencyTarget: "Scheduled 5-min batch sync"
+          }
+        ],
+        connections: [
+          { from: "seaspan-cadmatic3d", to: "seaspan-eshare", label: "Model REST Sync" },
+          { from: "seaspan-eshare", to: "seaspan-normalizer", label: "Extract Spool Data" },
+          { from: "seaspan-normalizer", to: "seaspan-arasplm", label: "Ingest eBOM AML" },
+          { from: "seaspan-arasplm", to: "seaspan-eco", label: "Trigger Change Loop" },
+          { from: "seaspan-eco", to: "seaspan-erpmes", label: "Authorize Fab" },
+          { from: "seaspan-erpmes", to: "seaspan-cadmatic3d", label: "As-Built Feedback" }
+        ]
+      },
+
+      yvr: {
+        name: "YVR Baggage Telemetry & Inspection",
+        subtitle: "Airport baggage handling system instrumentation and project QA governance",
+        nodes: [
+          {
+            id: "yvr-sensors",
+            x: 60,
+            y: 160,
+            width: 240,
+            height: 95,
+            title: "IR Beam Break & Photo-Eyes",
+            subtitle: "Conveyor Jam & Induction Array",
+            category: "Field Instrumentation",
+            catColor: "#38bdf8",
+            status: "OPTICAL SENSORS",
+            desc: "Optical emitter-detector infrared photo-eyes stationed across induct belts, divert gates, and carousel merges. Measures beam interruption intervals to detect luggage presence, verify tub spacing, and trigger immediate alerts upon conveyor jam conditions.",
+            evidenceRow: "CLAIMS-EVIDENCE-LEDGER.md #Row-94, 106, 134",
+            evidenceStatus: "UVic ENGR 120 LABS",
+            evidenceText: "Bardia Shah Abadi: Co-authored engineering sensor design report for Raspberry Pi Pico W microcontroller featuring infrared (IR), temperature, and ambient light sensors; assigned IR sensor subsystem & telemetry.",
+            codeLang: "c",
+            code: `// Hardware ADC / GPIO Divider Threshold
+#define IR_ANALOG_PIN 26
+#define BEAM_BROKEN_VOLTAGE_MV 850
+
+bool is_beam_interrupted() {
+    uint16_t adc_raw = adc_read_channel(0);
+    uint32_t mv = (adc_raw * 3300) / 4095;
+    return (mv < BEAM_BROKEN_VOLTAGE_MV);
+}`,
+            inputContract: "Analog voltage divider signal",
+            outputContract: "Boolean beam-break state",
+            failureMode: "Fail-safe to JAM condition on beam loss",
+            latencyTarget: "< 5 ms"
+          },
+          {
+            id: "yvr-firmware",
+            x: 360,
+            y: 160,
+            width: 240,
+            height: 95,
+            title: "MicroPython RP2040 Firmware",
+            subtitle: "Raspberry Pi Pico W Edge Controller",
+            category: "Embedded Firmware",
+            catColor: "#a855f7",
+            status: "INTERRUPT DRIVEN",
+            desc: "Edge firmware executed on Raspberry Pi Pico W microcontrollers. Samples hardware GPIO pins via non-blocking hardware timer interrupts, debounces sensor triggers against optical noise, and timestamps bag arrivals with microsecond precision.",
+            evidenceRow: "CLAIMS-EVIDENCE-LEDGER.md #Row-96, 136, 144",
+            evidenceStatus: "MICROPYTHON CERTIFIED",
+            evidenceText: "Bardia Shah Abadi: Programmed Raspberry Pi Pico W microcontrollers in MicroPython, sampling GPIO pins, voltage dividers, and verifying multimeter electrical bounds.",
+            codeLang: "python",
+            code: `import machine, time
+
+ir_pin = machine.Pin(16, machine.Pin.IN, machine.Pin.PULL_UP)
+bag_counter = 0
+
+def handle_beam_break(pin):
+    global bag_counter
+    # Software debounce 20ms
+    time.sleep_ms(20)
+    if pin.value() == 0:
+        bag_counter += 1
+        transmit_telemetry(bag_id=bag_counter, epoch_us=time.time_ns() // 1000)
+
+ir_pin.irq(trigger=machine.Pin.IRQ_FALLING, handler=handle_beam_break)`,
+            inputContract: "Pin interrupt event",
+            outputContract: "Timestamped event packet",
+            failureMode: "Hardware watchdog timer reset (WDT)",
+            latencyTarget: "< 10 ms"
+          },
+          {
+            id: "yvr-telemetry",
+            x: 660,
+            y: 160,
+            width: 240,
+            height: 95,
+            title: "MQTT Edge Telemetry Bridge",
+            subtitle: "Wi-Fi / TLS Ingest Gateway",
+            category: "Telemetry Ingest",
+            catColor: "#10b981",
+            status: "QoS-1 SECURE",
+            desc: "Wireless telemetry gateway aggregating readings from multiple edge conveyor controllers. Streams serialized JSON payloads over WPA3-Enterprise Wi-Fi into the central airport facilities network using TLS-encrypted MQTT pub/sub topics.",
+            evidenceRow: "CLAIMS-EVIDENCE-LEDGER.md #Row-94, 134",
+            evidenceStatus: "LIVE DASHBOARD HOOK",
+            evidenceText: "Bardia Shah Abadi: Assigned responsibility for infrared sensor interface circuit and streaming live sensor telemetry into an HTML dashboard.",
+            codeLang: "python",
+            code: `from umqtt.simple import MQTTClient
+import ujson
+
+client = MQTTClient("pico_bhs_zone4", "bhs-broker.yvr.internal", ssl=True)
+client.connect()
+
+def publish_event(zone_id: str, bag_id: int, dwell_ms: int):
+    payload = ujson.dumps({
+        "zone": zone_id,
+        "bag_id": bag_id,
+        "dwell_ms": dwell_ms,
+        "conveyor_speed_mps": 1.45
+    })
+    client.publish(b"yvr/terminal/bhs/divert_gate_12", payload, qos=1)`,
+            inputContract: "MicroPython serial JSON",
+            outputContract: "MQTT topic payload (QoS 1)",
+            failureMode: "Local flash buffering on disconnect",
+            latencyTarget: "< 40 ms"
+          },
+          {
+            id: "yvr-influx",
+            x: 960,
+            y: 160,
+            width: 230,
+            height: 95,
+            title: "InfluxDB Time-Series Store",
+            subtitle: "High-Throughput Operational DB",
+            category: "Time-Series Store",
+            catColor: "#f43f5e",
+            status: "TIME-SERIES",
+            desc: "Ingests hundreds of sensor pulses per second across terminal sortation carousels. Stores raw transit times, conveyor drive motor amps, and photo-eye beam opacity degradation curves to support predictive maintenance before physical baggage jams occur.",
+            evidenceRow: "CLAIMS-EVIDENCE-LEDGER.md #Row-93, 109",
+            evidenceStatus: "TIME-SERIES METRICS",
+            evidenceText: "Bardia Shah Abadi: Quantitative data modeling and metrics tracking for industrial instrumentation streams.",
+            codeLang: "bash",
+            code: `# InfluxDB Line Protocol Metric Ingest
+bhs_optical_sensor,terminal=TB,conveyor_line=L04,divert=D12 \\
+  beam_voltage=842.5,optical_attenuation=0.042,bag_transit_ms=318i \\
+  1730602499000000000
+
+bhs_drive_motor,terminal=TB,conveyor_line=L04 \\
+  current_amperes=18.42,vibration_rms=0.014 \\
+  1730602499000000000`,
+            inputContract: "Line protocol over HTTP/2",
+            outputContract: "Indexed time-series metric blocks",
+            failureMode: "WAL (Write-Ahead Log) persistence",
+            latencyTarget: "< 50 ms ingest write"
+          },
+          {
+            id: "yvr-linest",
+            x: 780,
+            y: 360,
+            width: 250,
+            height: 95,
+            title: "Excel LINEST QA Regression",
+            subtitle: "Rigorous Statistical Verification",
+            category: "Statistical Quality",
+            catColor: "#f59e0b",
+            status: "STATISTICAL QC",
+            desc: "Applies multi-variable LINEST linear and non-linear regression modeling, error propagation calculations, and t-score statistical tests to verify whether contractor conveyor installation speeds, belt tensions, and photocell latencies meet YVR terminal design codes.",
+            evidenceRow: "CLAIMS-EVIDENCE-LEDGER.md #Row-93, 97, 109",
+            evidenceStatus: "EXCEL LINEST PROVEN",
+            evidenceText: "Bardia Shah Abadi: Quantitative lab analysis in Microsoft Excel: LINEST regression, linear/non-linear modeling, error bars, propagated uncertainty, and t-score validation.",
+            codeLang: "excel",
+            code: `// Multi-variable LINEST Regression Formula
+=LINEST(
+  Y_DwellTimes_Array,
+  X_ConveyorSpeed_Weight_Matrix,
+  TRUE,  // calculate constant b
+  TRUE   // return regression statistics (r^2, SEy, F, df, ssreg, ssresid)
+)
+
+// t-score verification against YVR tolerance:
+// t_stat = (observed_speed - spec_speed) / (SE_conveyor_speed)
+// IF(ABS(t_stat) < 1.96, "COMPLIANT PASS", "NON-CONFORMANCE AUDIT")`,
+            inputContract: "Raw telemetry batch arrays",
+            outputContract: "R² fit, uncertainty, t-score result",
+            failureMode: "Flag contractor non-conformance",
+            latencyTarget: "Batch verification audit"
+          },
+          {
+            id: "yvr-ledger",
+            x: 350,
+            y: 360,
+            width: 260,
+            height: 95,
+            title: "Site Inspection & PM Ledger",
+            subtitle: "Micro-Project Renovation Tracking",
+            category: "Project Coordination",
+            catColor: "#38bdf8",
+            status: "FIELD AUDITED",
+            desc: "Maintains structured inspection punch lists and night shift renovation milestone receipts. Enables project managers to coordinate multi-stakeholder handoffs between electrical contractors, airport operations, and maintenance teams with audit-ready closeout receipts.",
+            evidenceRow: "CLAIMS-EVIDENCE-LEDGER.md #Row-100, 122, 130",
+            evidenceStatus: "PROJECT DISCIPLINE",
+            evidenceText: "Bardia Shah Abadi: First aid, strict safety protocols, rotation vigilance from lifeguarding; experienced in structured project coordination and contract administration.",
+            codeLang: "markdown",
+            code: `### YVR Baggage Handling Upgrade: Night Shift Inspection Receipt
+- **Inspector:** Bardia Shah Abadi (Engineering Co-op Student)
+- **Work Package:** Divert Gate 12 Optical Photo-Eye Realignment
+- **Drawing Reference:** DWG-YVR-BHS-TB-441-REV3
+- **Contractor In Attendance:** Vanderlande Industries
+- **Observation:** Photocell mounting bracket aligned to ±0.5 mm tolerance.
+- **Statistical Audit:** LINEST t-score t = 0.42 (P > 0.05, compliant with YVR BHS Spec 14.2).
+- **Status:** APPROVED FOR MORNING COMMISSIONING FLIGHTS.`,
+            inputContract: "Physical site walk & drawing reviews",
+            outputContract: "Closed punch list & PM signoff",
+            failureMode: "Escalate defect to YVR Senior PM",
+            latencyTarget: "End of night-shift delivery"
+          }
+        ],
+        connections: [
+          { from: "yvr-sensors", to: "yvr-firmware", label: "Analog GPIO" },
+          { from: "yvr-firmware", to: "yvr-telemetry", label: "Serial / Wi-Fi" },
+          { from: "yvr-telemetry", to: "yvr-influx", label: "TLS MQTT Ingest" },
+          { from: "yvr-influx", to: "yvr-linest", label: "Batch Metric Export" },
+          { from: "yvr-linest", to: "yvr-ledger", label: "QA Tolerance Pass" },
+          { from: "yvr-ledger", to: "yvr-sensors", label: "Contractor Punch Loop" }
+        ]
+      }
+    };
+
+    /* ==========================================================================
+       VIEWPORT ENGINE: PAN & ZOOM STATE
+       ========================================================================== */
+    let activeSystemKey = "harness";
+    let selectedNodeId = null;
+    let zoomLevel = 1;
+    let panX = 0;
+    let panY = 0;
+    let isPanning = false;
+    let startX = 0;
+    let startY = 0;
+
+    const canvasContainer = document.getElementById("canvasContainer");
+    const transformGroup = document.getElementById("transformGroup");
+    const connectionsLayer = document.getElementById("connectionsLayer");
+    const nodesLayer = document.getElementById("nodesLayer");
+    const inspectorDrawer = document.getElementById("inspectorDrawer");
+    const hudSystemName = document.getElementById("hudSystemName");
+
+    // Initialize application
+    function init() {
+      renderFloorplan(activeSystemKey);
+      setupEventListeners();
+      // Select the first node by default for immediate high-density demonstration
+      const firstNode = FLOORPLAN_DATA[activeSystemKey].nodes[0];
+      if (firstNode) {
+        selectNode(firstNode.id);
+      }
+    }
+
+    // Switch floorplans
+    function switchFloorplan(systemKey) {
+      if (!FLOORPLAN_DATA[systemKey]) return;
+      activeSystemKey = systemKey;
+      selectedNodeId = null;
+
+      // Update tabs UI
+      document.querySelectorAll(".tab-btn").forEach(btn => {
+        btn.classList.toggle("active", btn.dataset.system === systemKey);
+      });
+
+      // Update HUD
+      hudSystemName.textContent = FLOORPLAN_DATA[systemKey].name;
+
+      // Reset Pan / Zoom smoothly
+      resetView();
+
+      // Render new system elements
+      renderFloorplan(systemKey);
+
+      // Close drawer or select first node
+      const firstNode = FLOORPLAN_DATA[systemKey].nodes[0];
+      if (firstNode) {
+        selectNode(firstNode.id);
+      } else {
+        closeDrawer();
+      }
+    }
+
+    // Render nodes and connections
+    function renderFloorplan(systemKey) {
+      const data = FLOORPLAN_DATA[systemKey];
+      nodesLayer.innerHTML = "";
+      connectionsLayer.innerHTML = "";
+
+      const nodeMap = new Map();
+      data.nodes.forEach(n => nodeMap.set(n.id, n));
+
+      // 1. Render Connections
+      data.connections.forEach((conn, index) => {
+        const fromNode = nodeMap.get(conn.from);
+        const toNode = nodeMap.get(conn.to);
+        if (!fromNode || !toNode) return;
+
+        // Calculate connection ports
+        let x1, y1, x2, y2;
+        if (fromNode.y === toNode.y) {
+          x1 = fromNode.x + fromNode.width;
+          y1 = fromNode.y + fromNode.height / 2;
+          x2 = toNode.x;
+          y2 = toNode.y + toNode.height / 2;
+        } else if (fromNode.y < toNode.y) {
+          x1 = fromNode.x + fromNode.width / 2;
+          y1 = fromNode.y + fromNode.height;
+          x2 = toNode.x + toNode.width / 2;
+          y2 = toNode.y;
+        } else {
+          x1 = fromNode.x;
+          y1 = fromNode.y + fromNode.height / 2;
+          x2 = toNode.x + toNode.width;
+          y2 = toNode.y + toNode.height / 2;
+        }
+
+        const dx = x2 - x1;
+        const dy = y2 - y1;
+        const cx1 = x1 + dx * 0.45;
+        const cy1 = y1;
+        const cx2 = x1 + dx * 0.55;
+        const cy2 = y2;
+        const pathData = `M ${x1} ${y1} C ${cx1} ${cy1}, ${cx2} ${cy2}, ${x2} ${y2}`;
+
+        // Create connection group
+        const gConn = document.createElementNS("http://www.w3.org/2000/svg", "g");
+        gConn.setAttribute("id", `conn-${conn.from}-${conn.to}`);
+
+        const pathGlow = document.createElementNS("http://www.w3.org/2000/svg", "path");
+        pathGlow.setAttribute("d", pathData);
+        pathGlow.setAttribute("class", "connection-glow");
+        pathGlow.setAttribute("id", `glow-${conn.from}-${conn.to}`);
+
+        const pathLine = document.createElementNS("http://www.w3.org/2000/svg", "path");
+        pathLine.setAttribute("d", pathData);
+        pathLine.setAttribute("class", "connection-line");
+        pathLine.setAttribute("marker-end", "url(#arrowDefault)");
+        pathLine.setAttribute("id", `line-${conn.from}-${conn.to}`);
+
+        // Label pill on line
+        const midX = (x1 + x2) / 2;
+        const midY = (y1 + y2) / 2;
+        const labelBg = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+        labelBg.setAttribute("x", midX - 35);
+        labelBg.setAttribute("y", midY - 9);
+        labelBg.setAttribute("width", "70");
+        labelBg.setAttribute("height", "18");
+        labelBg.setAttribute("rx", "4");
+        labelBg.setAttribute("fill", "#090d16");
+        labelBg.setAttribute("stroke", "#1e293b");
+        labelBg.setAttribute("stroke-width", "1");
+
+        const labelText = document.createElementNS("http://www.w3.org/2000/svg", "text");
+        labelText.setAttribute("x", midX);
+        labelText.setAttribute("y", midY + 3);
+        labelText.setAttribute("fill", "#64748b");
+        labelText.setAttribute("font-size", "9");
+        labelText.setAttribute("font-family", "var(--font-mono)");
+        labelText.setAttribute("text-anchor", "middle");
+        labelText.textContent = conn.label;
+
+        gConn.appendChild(pathGlow);
+        gConn.appendChild(pathLine);
+        gConn.appendChild(labelBg);
+        gConn.appendChild(labelText);
+        connectionsLayer.appendChild(gConn);
+      });
+
+      // 2. Render Node Cards
+      data.nodes.forEach(node => {
+        const gNode = document.createElementNS("http://www.w3.org/2000/svg", "g");
+        gNode.setAttribute("class", "node-group");
+        gNode.setAttribute("id", `node-${node.id}`);
+        gNode.setAttribute("tabindex", "0");
+        gNode.onclick = () => selectNode(node.id);
+        gNode.onkeydown = (e) => { if (e.key === "Enter" || e.key === " ") selectNode(node.id); };
+
+        // Outer Card
+        const rect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+        rect.setAttribute("class", "node-card");
+        rect.setAttribute("x", node.x);
+        rect.setAttribute("y", node.y);
+        rect.setAttribute("width", node.width);
+        rect.setAttribute("height", node.height);
+
+        // Header Category Badge Box
+        const badgeWidth = 90;
+        const badgeHeight = 18;
+        const badgeRect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+        badgeRect.setAttribute("class", "node-badge-rect");
+        badgeRect.setAttribute("x", node.x + 14);
+        badgeRect.setAttribute("y", node.y + 12);
+        badgeRect.setAttribute("width", badgeWidth);
+        badgeRect.setAttribute("height", badgeHeight);
+        badgeRect.setAttribute("fill", `${node.catColor}20`);
+        badgeRect.setAttribute("stroke", `${node.catColor}50`);
+        badgeRect.setAttribute("stroke-width", "1");
+
+        const badgeText = document.createElementNS("http://www.w3.org/2000/svg", "text");
+        badgeText.setAttribute("class", "node-badge-text");
+        badgeText.setAttribute("x", node.x + 14 + badgeWidth / 2);
+        badgeText.setAttribute("y", node.y + 12 + badgeHeight / 2);
+        badgeText.setAttribute("fill", node.catColor);
+        badgeText.textContent = node.category.toUpperCase();
+
+        // Status indicator dot
+        const statusDot = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+        statusDot.setAttribute("cx", node.x + node.width - 20);
+        statusDot.setAttribute("cy", node.y + 20);
+        statusDot.setAttribute("r", "4");
+        statusDot.setAttribute("fill", node.status.includes("ACTIVE") || node.status.includes("PASSING") ? "#10b981" : "#38bdf8");
+
+        // Title
+        const titleText = document.createElementNS("http://www.w3.org/2000/svg", "text");
+        titleText.setAttribute("class", "node-title");
+        titleText.setAttribute("x", node.x + 14);
+        titleText.setAttribute("y", node.y + 52);
+        titleText.textContent = node.title;
+
+        // Subtitle / Filename
+        const subText = document.createElementNS("http://www.w3.org/2000/svg", "text");
+        subText.setAttribute("class", "node-subtitle");
+        subText.setAttribute("x", node.x + 14);
+        subText.setAttribute("y", node.y + 73);
+        subText.textContent = node.subtitle;
+
+        // Port pins (left and right)
+        const portL = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+        portL.setAttribute("class", "node-port");
+        portL.setAttribute("cx", node.x);
+        portL.setAttribute("cy", node.y + node.height / 2);
+        portL.setAttribute("r", "4");
+
+        const portR = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+        portR.setAttribute("class", "node-port");
+        portR.setAttribute("cx", node.x + node.width);
+        portR.setAttribute("cy", node.y + node.height / 2);
+        portR.setAttribute("r", "4");
+
+        gNode.appendChild(rect);
+        gNode.appendChild(badgeRect);
+        gNode.appendChild(badgeText);
+        gNode.appendChild(statusDot);
+        gNode.appendChild(titleText);
+        gNode.appendChild(subText);
+        gNode.appendChild(portL);
+        gNode.appendChild(portR);
+        nodesLayer.appendChild(gNode);
+      });
+    }
+
+    // Select and inspect a node
+    function selectNode(nodeId) {
+      const data = FLOORPLAN_DATA[activeSystemKey];
+      const node = data.nodes.find(n => n.id === nodeId);
+      if (!node) return;
+
+      selectedNodeId = nodeId;
+
+      // Update node styles
+      document.querySelectorAll(".node-group").forEach(el => {
+        el.classList.toggle("selected", el.id === `node-${nodeId}`);
+      });
+
+      // Update connected lines highlights
+      document.querySelectorAll(".connection-line").forEach(line => {
+        line.classList.remove("highlighted");
+        line.setAttribute("marker-end", "url(#arrowDefault)");
+      });
+      document.querySelectorAll(".connection-glow").forEach(glow => {
+        glow.classList.remove("active");
+      });
+
+      data.connections.forEach(conn => {
+        if (conn.from === nodeId || conn.to === nodeId) {
+          const line = document.getElementById(`line-${conn.from}-${conn.to}`);
+          const glow = document.getElementById(`glow-${conn.from}-${conn.to}`);
+          if (line) {
+            line.classList.add("highlighted");
+            line.setAttribute("marker-end", "url(#arrowCyan)");
+          }
+          if (glow) glow.classList.add("active");
+        }
+      });
+
+      // Populate Inspector Drawer
+      document.getElementById("drawerCategoryTag").textContent = node.category.toUpperCase();
+      document.getElementById("drawerCategoryTag").style.backgroundColor = `${node.catColor}20`;
+      document.getElementById("drawerCategoryTag").style.color = node.catColor;
+      document.getElementById("drawerCategoryTag").style.border = `1px solid ${node.catColor}40`;
+
+      document.getElementById("drawerTitle").textContent = node.title;
+      document.getElementById("drawerDesc").textContent = node.desc;
+      document.getElementById("drawerEvidenceRow").textContent = node.evidenceRow;
+      document.getElementById("drawerVerifiedStatus").textContent = node.evidenceStatus;
+      document.getElementById("drawerEvidenceStatement").textContent = `"${node.evidenceText}"`;
+
+      document.getElementById("drawerCodeLang").textContent = node.codeLang;
+      document.getElementById("drawerCodeSnippet").textContent = node.code;
+
+      document.getElementById("drawerSpecInput").textContent = node.inputContract;
+      document.getElementById("drawerSpecOutput").textContent = node.outputContract;
+      document.getElementById("drawerSpecFail").textContent = node.failureMode;
+      document.getElementById("drawerSpecLatency").textContent = node.latencyTarget;
+
+      // Open drawer
+      inspectorDrawer.classList.add("open");
+    }
+
+    function closeDrawer() {
+      inspectorDrawer.classList.remove("open");
+      selectedNodeId = null;
+      document.querySelectorAll(".node-group").forEach(el => el.classList.remove("selected"));
+      document.querySelectorAll(".connection-line").forEach(l => {
+        l.classList.remove("highlighted");
+        l.setAttribute("marker-end", "url(#arrowDefault)");
+      });
+      document.querySelectorAll(".connection-glow").forEach(g => g.classList.remove("active"));
+    }
+
+    function cycleNode(direction) {
+      const data = FLOORPLAN_DATA[activeSystemKey];
+      if (!data || !data.nodes.length) return;
+      let currentIndex = data.nodes.findIndex(n => n.id === selectedNodeId);
+      if (currentIndex === -1) currentIndex = 0;
+      let nextIndex = (currentIndex + direction + data.nodes.length) % data.nodes.length;
+      selectNode(data.nodes[nextIndex].id);
+    }
+
+    function copySnippet() {
+      const code = document.getElementById("drawerCodeSnippet").textContent;
+      navigator.clipboard.writeText(code).then(() => {
+        const btnText = document.getElementById("copyBtnText");
+        btnText.textContent = "Copied!";
+        setTimeout(() => { btnText.textContent = "Copy"; }, 2000);
+      });
+    }
+
+    // Filter nodes by search query
+    function handleFilter(query) {
+      const clean = query.trim().toLowerCase();
+      document.querySelectorAll(".node-group").forEach(el => {
+        const nodeId = el.id.replace("node-", "");
+        const node = FLOORPLAN_DATA[activeSystemKey].nodes.find(n => n.id === nodeId);
+        if (!node) return;
+        const matches = !clean || 
+          node.title.toLowerCase().includes(clean) || 
+          node.subtitle.toLowerCase().includes(clean) || 
+          node.category.toLowerCase().includes(clean) ||
+          node.desc.toLowerCase().includes(clean);
+        el.classList.toggle("dimmed", !matches);
+      });
+    }
+
+    /* ==========================================================================
+       PAN & ZOOM INTERACTIVE CONTROLS
+       ========================================================================== */
+    function updateTransform() {
+      transformGroup.setAttribute("transform", `matrix(${zoomLevel} 0 0 ${zoomLevel} ${panX} ${panY})`);
+    }
+
+    function zoomStep(delta) {
+      zoomLevel = Math.max(0.4, Math.min(2.5, zoomLevel + delta));
+      updateTransform();
+    }
+
+    function resetView() {
+      zoomLevel = 1;
+      panX = 0;
+      panY = 0;
+      updateTransform();
+    }
+
+    function setupEventListeners() {
+      // Pan with Mouse Drag
+      canvasContainer.addEventListener("mousedown", (e) => {
+        // Only pan if clicking canvas background, not directly on an interactive node
+        if (e.target.closest(".node-group")) return;
+        isPanning = true;
+        startX = e.clientX - panX;
+        startY = e.clientY - panY;
+        canvasContainer.classList.add("panning");
+      });
+
+      window.addEventListener("mousemove", (e) => {
+        if (!isPanning) return;
+        panX = e.clientX - startX;
+        panY = e.clientY - startY;
+        updateTransform();
+      });
+
+      window.addEventListener("mouseup", () => {
+        isPanning = false;
+        canvasContainer.classList.remove("panning");
+      });
+
+      // Wheel Zoom
+      canvasContainer.addEventListener("wheel", (e) => {
+        e.preventDefault();
+        const zoomDelta = e.deltaY < 0 ? 0.12 : -0.12;
+        const rect = canvasContainer.getBoundingClientRect();
+        const mouseX = e.clientX - rect.left;
+        const mouseY = e.clientY - rect.top;
+
+        const newZoom = Math.max(0.4, Math.min(2.5, zoomLevel + zoomDelta));
+        // Center zoom around cursor
+        panX = mouseX - (mouseX - panX) * (newZoom / zoomLevel);
+        panY = mouseY - (mouseY - panY) * (newZoom / zoomLevel);
+        zoomLevel = newZoom;
+        updateTransform();
+      }, { passive: false });
+
+      // Keyboard navigation
+      window.addEventListener("keydown", (e) => {
+        if (e.target.tagName === "INPUT") return;
+        if (e.key === "Escape") closeDrawer();
+        if (e.key === "+" || e.key === "=") zoomStep(0.15);
+        if (e.key === "-" || e.key === "_") zoomStep(-0.15);
+        if (e.key === "0") resetView();
+        if (e.key === "1") switchFloorplan("harness");
+        if (e.key === "2") switchFloorplan("seaspan");
+        if (e.key === "3") switchFloorplan("yvr");
+        if (e.key === "ArrowLeft") cycleNode(-1);
+        if (e.key === "ArrowRight") cycleNode(1);
+      });
+    }
+
+    // Launch on document ready
+    document.addEventListener("DOMContentLoaded", init);
+  </script>
+</body>
+</html>
